@@ -77,6 +77,7 @@ func main() {
 		})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+			return
 		}
 		response := ActionResponse{
 			CommandOutput: cmdLog.String(),
