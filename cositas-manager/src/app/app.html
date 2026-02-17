@@ -1,0 +1,94 @@
+<main class="main">
+  <div class="content">
+    <h1>Hello, {{ title() }}</h1>
+    <div is-="separator"></div>
+
+    <div box-="square" shear-="top">
+      <div class="header">
+        <span is-="badge" variant-="teal">Global actions</span>
+      </div>
+
+      <button box-="round" variant-="mauve" popovertarget="chmod"> chmod -x *</button>
+      <dialog id="chmod" popover>
+        <div box-="round">
+          <p>Confirm to chmod -x *</p>
+          <div is-="separator"></div>
+          <div style="float: right;">
+            <button box-="round" variant-="red" popovertarget="chmod" popovertargetaction="hide">Cancel</button>
+            <button box-="round" variant-="green" popovertarget="chmod" popovertargetaction="hide" (click)="chmodActionAPI()">Confirm</button>
+          </div>
+        </div>
+      </dialog>
+
+      <button box-="round" variant-="green"> 7z -y x "*.zip.001"</button>
+      <dialog id="7zzip001" popover>
+        <div box-="round">
+          <p>Confirm to 7z -y x "*.zip.001"</p>
+          <div is-="separator"></div>
+          <div style="float: right;">
+            <button box-="round" variant-="red" popovertarget="7zzip001" popovertargetaction="hide">Cancel</button>
+            <button box-="round" variant-="green" popovertarget="7zzip001" popovertargetaction="hide" (click)="_7zzip001ActionAPI()">Confirm</button>
+          </div>
+        </div>
+      </dialog>
+
+      <button box-="round" variant-="yellow"> 7z -y x "*.zip"</button>
+      <dialog id="7zzip" popover>
+        <div box-="round">
+          <p>Confirm to 7z -y x "*.zip"<p>
+          <div is-="separator"></div>
+          <div style="float: right;">
+            <button box-="round" variant-="red" popovertarget="7zzip" popovertargetaction="hide">Cancel</button>
+            <button box-="round" variant-="green" popovertarget="7zzip" popovertargetaction="hide" (click)="_7zzipActionAPI()">Confirm</button>
+          </div>
+        </div>
+      </dialog>
+
+      <button box-="round" variant-="sapphire"> 7z -y x "*.7z.001"</button>
+      <dialog id="7z7z001" popover>
+        <div box-="round">
+          <p>Confirm to 7z -y x "*.7z.001"<p>
+          <div is-="separator"></div>
+          <div style="float: right;">
+            <button box-="round" variant-="red" popovertarget="7z7z001" popovertargetaction="hide">Cancel</button>
+            <button box-="round" variant-="green" popovertarget="7z7z001" popovertargetaction="hide" (click)="_7z7z001ActionAPI()">Confirm</button>
+          </div>
+        </div>
+      </dialog>
+
+      <button box-="round" variant-="red">󱝧 rm *zip*</button>
+      <dialog id="rmzip" popover>
+        <div box-="round">
+          <p>Confirm to rm *zip*<p>
+          <div is-="separator"></div>
+          <div style="float: right;">
+            <button box-="round" variant-="red" popovertarget="rmzip" popovertargetaction="hide">Cancel</button>
+            <button box-="round" variant-="green" popovertarget="rmzip" popovertargetaction="hide" (click)="rmzipActionAPI()">Confirm</button>
+          </div>
+        </div>
+      </dialog>
+
+    </div>
+
+    <div is-="separator"></div>
+
+    <div box-="square" shear-="top">
+      <div class="header">
+        <span is-="badge" variant-="teal"> File Tree</span>
+      </div>
+      <file-tree />
+    </div>
+
+
+    <dialog id="actionOutputDialog" [open]="showActionOutputDialog()" size-="full" container-="fill">
+      <div box-="round" style="overflow-x:auto;overflow-y:auto">
+        <h1>Action Output</h1>
+        <pre id="actionOutput">{{actionOutput}}</pre>
+        <button box-="round" variant-="blue" (click)="hideActionOutputDialog()">OK</button>
+      </div>
+    </dialog>
+
+  </div>
+</main>
+
+<router-outlet />
