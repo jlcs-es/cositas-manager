@@ -16,43 +16,54 @@ export class App {
   private apiService = inject(ApiService);
   actionOutput: string = '';
   showActionOutputDialog = signal(false);
+  loading = signal(true);
 
   hideActionOutputDialog() {
     this.showActionOutputDialog.set(false);
   }
 
   chmodActionAPI() {
+    this.loading.set(true)
+    this.showActionOutputDialog.set(true);
     this.apiService.chmod().subscribe((actionResponse) => {
+      this.loading.set(false)
       this.actionOutput = actionResponse.commandOutput;
-      this.showActionOutputDialog.set(true);
     });
   }
 
   _7zzip001ActionAPI() {
+    this.loading.set(true)
+    this.showActionOutputDialog.set(true);
     this.apiService._7zzip001().subscribe((actionResponse) => {
+      this.loading.set(false)
       this.actionOutput = actionResponse.commandOutput;
-      this.showActionOutputDialog.set(true);
     });
   }
 
   _7zzipActionAPI() {
+    this.loading.set(true)
+    this.showActionOutputDialog.set(true);
     this.apiService._7zzip().subscribe((actionResponse) => {
+      this.loading.set(false)
       this.actionOutput = actionResponse.commandOutput;
-      this.showActionOutputDialog.set(true);
     });
   }
 
   _7z7z001ActionAPI() {
+    this.loading.set(true)
+    this.showActionOutputDialog.set(true);
     this.apiService._7z7z001().subscribe((actionResponse) => {
+      this.loading.set(false)
       this.actionOutput = actionResponse.commandOutput;
-      this.showActionOutputDialog.set(true);
     });
   }
 
   rmzipActionAPI() {
+    this.loading.set(true)
+    this.showActionOutputDialog.set(true);
     this.apiService.rmzip().subscribe((actionResponse) => {
+      this.loading.set(false)
       this.actionOutput = actionResponse.commandOutput;
-      this.showActionOutputDialog.set(true);
     });
   }
 }

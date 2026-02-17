@@ -83,6 +83,12 @@
     <dialog id="actionOutputDialog" [open]="showActionOutputDialog()" size-="full" container-="fill">
       <div box-="round" style="overflow-x:auto;overflow-y:auto">
         <h1>Action Output</h1>
+        @if (loading()) {
+        <span>
+          <span is-="spinner"></span>
+          Loading...
+        </span>
+        }
         <pre id="actionOutput">{{actionOutput}}</pre>
         <button box-="round" variant-="blue" (click)="hideActionOutputDialog()">OK</button>
       </div>
