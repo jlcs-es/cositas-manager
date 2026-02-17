@@ -17,5 +17,8 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o cositas-m
 
 FROM scratch
 COPY --from=backend-builder /cositas-manager-back/cositas-manager-bin /bin/cositas-manager
+COPY --from=crazymax/7zip /usr/local/bin/7za /bin/7za
+COPY --from=crazymax/7zip /usr/local/bin/7zr /bin/7zr
+COPY --from=crazymax/7zip /usr/local/bin/7z /bin/7z
 EXPOSE 8080
 CMD ["/bin/cositas-manager"]

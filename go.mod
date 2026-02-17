@@ -2,7 +2,10 @@ module cositas-manager-back
 
 go 1.26
 
-require github.com/gin-gonic/gin v1.11.0
+require (
+	github.com/dustin/go-humanize v1.0.1
+	github.com/gin-gonic/gin v1.11.0
+)
 
 require (
 	github.com/bytedance/sonic v1.14.0 // indirect

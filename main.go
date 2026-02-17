@@ -3,12 +3,15 @@ package main
 import (
 	"embed"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
+	"github.com/dustin/go-humanize"
 	"github.com/gin-gonic/gin"
 
 	"net/http"
@@ -28,6 +31,7 @@ type ActionResponse struct {
 
 type FileTreeItem struct {
 	Name        string `json:"name,omitempty"`
+	Size        string `json:"size,omitempty"`
 	Permissions string `json:"permissions,omitempty"`
 	IsDirectory bool   `json:"isDirectory,omitempty"`
 }
@@ -60,7 +64,7 @@ func main() {
 			if d.IsDir() {
 				return nil
 			}
-			perms, err := getPerms(d)
+			_, perms, err := getPerms(d)
 			if err != nil {
 				return err
 			}
@@ -76,7 +80,7 @@ func main() {
 			return nil
 		})
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 		response := ActionResponse{
@@ -86,7 +90,12 @@ func main() {
 	})
 
 	router.POST("/api/action/7zzip001", func(c *gin.Context) {
-		c.String(http.StatusOK, "7z -y x \"*.zip.001\" output")
+		output, err := run7z(downloadsDirectory, "-y", "x", "*.zip.001")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": output + " - " + err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, ActionResponse{output})
 	})
 
 	router.POST("/api/action/7zzip", func(c *gin.Context) {
@@ -98,7 +107,28 @@ func main() {
 	})
 
 	router.POST("/api/action/rmzip", func(c *gin.Context) {
-		c.String(http.StatusOK, "rm *zip* output")
+		cmdLog := strings.Builder{}
+		matches, err := filepath.Glob(downloadsDirectory + "/*zip*")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		for _, match := range matches {
+			_, err := fmt.Fprintf(&cmdLog, "rm %s\n", match)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			err = os.Remove(match)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+		}
+		response := ActionResponse{
+			CommandOutput: cmdLog.String(),
+		}
+		c.JSON(http.StatusOK, response)
 	})
 
 	router.POST("/api/action/move", func(c *gin.Context) {
@@ -115,18 +145,20 @@ func main() {
 	router.POST("/api/info/listfiles", func(c *gin.Context) {
 		dir, err := os.ReadDir(downloadsDirectory)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 		fileTree := make([]FileTreeItem, 0)
 		for _, entry := range dir {
-			perms, err := getPerms(entry)
+			size, perms, err := getPerms(entry)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
+			hrSize := humanize.Bytes(uint64(size))
 			fileTree = append(fileTree, FileTreeItem{
 				Name:        entry.Name(),
+				Size:        hrSize,
 				Permissions: perms.String(),
 				IsDirectory: entry.IsDir(),
 			})
@@ -140,10 +172,25 @@ func main() {
 	}
 }
 
-func getPerms(f os.DirEntry) (os.FileMode, error) {
+func getPerms(f os.DirEntry) (int64, os.FileMode, error) {
 	info, err := f.Info()
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
-	return info.Mode().Perm(), nil
+	return info.Size(), info.Mode().Perm(), nil
+}
+
+func run7z(directory string, args ...string) (string, error) {
+	cmd := exec.Command("/bin/7z", args...)
+	cmd.Dir = directory
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return "", err
+	}
+	output, err := cmd.Output()
+	if err != nil {
+		slurp, _ := io.ReadAll(stderr)
+		return cmd.String() + ": " + string(slurp), err
+	}
+	return cmd.String() + "\n" + string(output), err
 }
