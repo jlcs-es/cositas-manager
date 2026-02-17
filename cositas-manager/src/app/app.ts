@@ -20,6 +20,7 @@ export class App {
 
   hideActionOutputDialog() {
     this.showActionOutputDialog.set(false);
+    this.actionOutput = '';
   }
 
   chmodActionAPI() {
