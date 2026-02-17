@@ -96,6 +96,7 @@ func main() {
 			if err != nil {
 				log.Println("ERROR: " + output + " - " + err.Error())
 			}
+			log.Println("FINISHED: " + output)
 		}()
 		c.JSON(http.StatusOK, ActionResponse{"Working asynchronously"})
 	})
@@ -106,6 +107,7 @@ func main() {
 			if err != nil {
 				log.Println("ERROR: " + output + " - " + err.Error())
 			}
+			log.Println("FINISHED: " + output)
 		}()
 		c.JSON(http.StatusOK, ActionResponse{"Working asynchronously"})
 	})
@@ -116,6 +118,7 @@ func main() {
 			if err != nil {
 				log.Println("ERROR: " + output + " - " + err.Error())
 			}
+			log.Println("FINISHED: " + output)
 		}()
 		c.JSON(http.StatusOK, ActionResponse{"Working asynchronously"})
 	})
