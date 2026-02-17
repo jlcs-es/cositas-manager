@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/dustin/go-humanize"
 	"github.com/gin-gonic/gin"
@@ -90,20 +91,33 @@ func main() {
 	})
 
 	router.POST("/api/action/7zzip001", func(c *gin.Context) {
-		output, err := run7z(downloadsDirectory, "-y", "x", "*.zip.001")
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": output + " - " + err.Error()})
-			return
-		}
-		c.JSON(http.StatusOK, ActionResponse{output})
+		go func() {
+			output, err := run7z(downloadsDirectory, "-y", "x", "*.zip.001")
+			if err != nil {
+				log.Println("ERROR: " + output + " - " + err.Error())
+			}
+		}()
+		c.JSON(http.StatusOK, ActionResponse{"Working asynchronously"})
 	})
 
 	router.POST("/api/action/7zzip", func(c *gin.Context) {
-		c.String(http.StatusOK, "7z -y x \"*.zip\" output")
+		go func() {
+			output, err := run7z(downloadsDirectory, "-y", "x", "*.zip")
+			if err != nil {
+				log.Println("ERROR: " + output + " - " + err.Error())
+			}
+		}()
+		c.JSON(http.StatusOK, ActionResponse{"Working asynchronously"})
 	})
 
 	router.POST("/api/action/7z7z001", func(c *gin.Context) {
-		c.String(http.StatusOK, "7z -y x \"*.7z.001\" output")
+		go func() {
+			output, err := run7z(downloadsDirectory, "-y", "x", "*.7z.001")
+			if err != nil {
+				log.Println("ERROR: " + output + " - " + err.Error())
+			}
+		}()
+		c.JSON(http.StatusOK, ActionResponse{"Working asynchronously"})
 	})
 
 	router.POST("/api/action/rmzip", func(c *gin.Context) {
@@ -190,6 +204,12 @@ func run7z(directory string, args ...string) (string, error) {
 	output, err := cmd.Output()
 	if err != nil {
 		slurp, _ := io.ReadAll(stderr)
+
+		errMsg := cmd.String() + ": " + string(slurp) + " - " + err.Error()
+		err2 := os.WriteFile(directory+"/"+time.Now().UTC().Format(time.RFC3339)+".txt", []byte(errMsg), 0644)
+		if err2 != nil {
+			return cmd.String() + ": " + string(slurp), err2
+		}
 		return cmd.String() + ": " + string(slurp), err
 	}
 	return cmd.String() + "\n" + string(output), err
