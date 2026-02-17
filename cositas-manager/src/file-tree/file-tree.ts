@@ -6,23 +6,23 @@ import {AsyncPipe} from '@angular/common';
 @Component({
   selector: 'file-tree',
   template: `
-    <ul marker-="tree">
+    <div>
       @if (fileTree$ | async; as fileTree) {
         @for (item of fileTree; track item.name) {
-          <li>
+          <p>
             <input type="radio" name="selectedItem" />
-            {{item.permissions}} {{item.name}}@if(item.isDirectory){/}
-          </li>
+            {{item.permissions}} {{item.size}} {{item.name}}@if(item.isDirectory){/}
+          </p>
         } @empty {
-          <li>There are no items.</li>
+          <p>There are no items.</p>
         }
       } @else {
-        <li>Loading...</li>
+        <p>Loading...</p>
       }
-    </ul>
+    </div>
 
 
-    <button box-="round"> Refresh</button>
+    <button box-="round" (click)="refreshFileTree()"> Refresh</button>
     <button box-="round">󰉒 Move to...</button>
   `,
   imports: [AsyncPipe]
@@ -35,6 +35,10 @@ export class FileTree {
     effect(() => {
       this.fileTree$ = this.apiService.getFileTree();
     });
+  }
+
+  refreshFileTree() {
+    this.fileTree$ = this.apiService.getFileTree();
   }
 }
 

@@ -2,6 +2,8 @@ import {Component, inject, signal} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { FileTree} from '../file-tree/file-tree';
 import {ApiService} from '../file-tree/api-service';
+import {HttpErrorResponse} from '@angular/common/http';
+import {throwError} from 'rxjs';
 
 @Component({
   selector: 'app-root',
