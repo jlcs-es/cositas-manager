@@ -96,6 +96,7 @@ func main() {
 			output, err := run7z(downloadsDirectory, "-y", "x", "*.zip.001")
 			if err != nil {
 				log.Println("ERROR: " + output + " - " + err.Error())
+				return
 			}
 			log.Println("FINISHED: " + output)
 		}()
@@ -107,6 +108,7 @@ func main() {
 			output, err := run7z(downloadsDirectory, "-y", "x", "*.zip")
 			if err != nil {
 				log.Println("ERROR: " + output + " - " + err.Error())
+				return
 			}
 			log.Println("FINISHED: " + output)
 		}()
@@ -118,6 +120,7 @@ func main() {
 			output, err := run7z(downloadsDirectory, "-y", "x", "*.7z.001")
 			if err != nil {
 				log.Println("ERROR: " + output + " - " + err.Error())
+				return
 			}
 			log.Println("FINISHED: " + output)
 		}()
