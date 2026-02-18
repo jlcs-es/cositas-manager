@@ -9,6 +9,11 @@ export interface FileTreeItem {
   isDirectory: boolean;
 }
 
+export interface MoveActionBody {
+  sourceName: string;
+  destinationDirectory: string;
+}
+
 export interface ActionResponse {
   commandOutput: string;
 }
@@ -19,6 +24,11 @@ export class ApiService {
 
   getFileTree(): Observable<FileTreeItem[]> {
     return this.http.post<FileTreeItem[]>(`/api/info/listfiles`, null)
+      .pipe(catchError(this.handleError));
+  }
+
+  getMediaTree(): Observable<string[]> {
+    return this.http.post<string[]>(`/api/info/treemedia`, null)
       .pipe(catchError(this.handleError));
   }
 
@@ -44,6 +54,11 @@ export class ApiService {
 
   rmzip(): Observable<ActionResponse> {
     return this.http.post<ActionResponse>(`/api/action/rmzip`, null)
+      .pipe(catchError(this.handleError));
+  }
+
+  move(body: MoveActionBody): Observable<ActionResponse> {
+    return this.http.post<ActionResponse>(`/api/action/move`, body)
       .pipe(catchError(this.handleError));
   }
 

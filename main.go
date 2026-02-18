@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -21,9 +22,9 @@ import (
 //go:embed cositas-manager/dist/cositas-manager/browser
 var frontendFS embed.FS
 
-type MoveFileBody struct {
-	FileName string `json:"fileName" binding:"required"`
-	DirName  string `json:"dirName" binding:"required"`
+type MoveActionBody struct {
+	SourceName           string `json:"sourceName" binding:"required"`
+	DestinationDirectory string `json:"destinationDirectory" binding:"required"`
 }
 
 type ActionResponse struct {
@@ -149,14 +150,60 @@ func main() {
 	})
 
 	router.POST("/api/action/move", func(c *gin.Context) {
-		body := MoveFileBody{}
+		body := MoveActionBody{}
 		if err := c.ShouldBind(&body); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		err := os.Rename(
+			path.Join(downloadsDirectory, body.SourceName),
+			path.Join(body.DestinationDirectory, body.SourceName),
+		)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
 		}
 		response := ActionResponse{
-			CommandOutput: "move " + body.FileName + " to " + body.DirName,
+			CommandOutput: "Moved " + body.SourceName + " to " + body.DestinationDirectory,
 		}
 		c.JSON(http.StatusOK, response)
+	})
+
+	/*
+
+		router.POST("/api/info/treemedia", func(c *gin.Context) {
+			movies, err := listTree(downloadsDirectory)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, movies)
+		})
+	*/
+
+	router.POST("/api/info/treemedia", func(c *gin.Context) {
+		movies, err := listTree("/media/Movies")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		series, err := listTree("/media/Series")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		anime, err := listTree("/media/Anime")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		fileTree := append(movies, append(series, anime...)...)
+
+		c.JSON(http.StatusOK, fileTree)
 	})
 
 	router.POST("/api/info/listfiles", func(c *gin.Context) {
@@ -216,4 +263,18 @@ func run7z(directory string, args ...string) (string, error) {
 		return cmd.String() + ": " + string(slurp), err
 	}
 	return cmd.String() + "\n" + string(output), err
+}
+
+func listTree(directory string) ([]string, error) {
+	directories := make([]string, 0)
+	err := filepath.WalkDir(directory, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			directories = append(directories, path)
+		}
+		return nil
+	})
+	return directories, err
 }

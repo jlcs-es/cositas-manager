@@ -1,9 +1,7 @@
 import {Component, inject, signal} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { FileTree} from '../file-tree/file-tree';
-import {ApiService} from '../file-tree/api-service';
-import {HttpErrorResponse} from '@angular/common/http';
-import {throwError} from 'rxjs';
+import {ApiService, MoveActionBody} from '../file-tree/api-service';
 
 @Component({
   selector: 'app-root',
@@ -64,6 +62,19 @@ export class App {
     this.showActionOutputDialog.set(true);
     this.apiService.rmzip().subscribe((actionResponse) => {
       this.loading.set(false)
+      this.actionOutput = actionResponse.commandOutput;
+    });
+  }
+
+  moveActionAPI() {
+    this.loading.set(true);
+    this.showActionOutputDialog.set(true);
+    let moveBody: MoveActionBody = {
+      destinationDirectory: '',
+      sourceName: ''
+    }
+    this.apiService.move(moveBody).subscribe((actionResponse) => {
+      this.loading.set(false);
       this.actionOutput = actionResponse.commandOutput;
     });
   }
