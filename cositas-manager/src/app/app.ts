@@ -1,7 +1,8 @@
-import {Component, inject, signal} from '@angular/core';
+import {Component, effect, inject, signal, WritableSignal} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { FileTree} from '../file-tree/file-tree';
 import {ApiService, MoveActionBody} from '../file-tree/api-service';
+import {catchError, startWith, switchMap, tap, timer} from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -15,6 +16,21 @@ export class App {
   actionOutput: string = '';
   showActionOutputDialog = signal(false);
   loading = signal(true);
+  jobsList: WritableSignal<string[]> = signal([])
+
+  constructor() {
+    effect(() => {
+      timer(0, 5000).pipe(
+        switchMap(() => {
+          return this.apiService.getJobs()
+        }),
+        tap((data) => this.jobsList.set(data)),
+        catchError(error => {
+          throw new Error(`Polling error: ${error}`);
+        })
+      ).subscribe();
+    });
+  }
 
   hideActionOutputDialog() {
     this.showActionOutputDialog.set(false);

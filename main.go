@@ -11,12 +11,14 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
+
+	"net/http"
 
 	"github.com/dustin/go-humanize"
 	"github.com/gin-gonic/gin"
-
-	"net/http"
 )
 
 //go:embed cositas-manager/dist/cositas-manager/browser
@@ -38,7 +40,28 @@ type FileTreeItem struct {
 	IsDirectory bool   `json:"isDirectory,omitempty"`
 }
 
+type Job struct {
+	output string
+	date   time.Time
+}
+
+var jobsCounter atomic.Uint64
+var jobs = sync.Map{}
+
 func main() {
+
+	go func() {
+		for {
+			jobs.Range(func(key, value any) bool {
+				job := value.(*Job)
+				if job.date.Before(time.Now().Add(-2 * time.Hour)) {
+					jobs.Delete(key)
+				}
+				return true
+			})
+			time.Sleep(time.Hour)
+		}
+	}()
 
 	downloadsDirectory, ok := os.LookupEnv("DOWNLOADS_DIRECTORY")
 	if !ok {
@@ -92,39 +115,21 @@ func main() {
 	})
 
 	router.POST("/api/action/7zzip001", func(c *gin.Context) {
-		go func() {
-			output, err := run7z(downloadsDirectory, "-y", "x", "*.zip.001")
-			if err != nil {
-				log.Println("ERROR: " + output + " - " + err.Error())
-				return
-			}
-			log.Println("FINISHED: " + output)
-		}()
-		c.JSON(http.StatusOK, ActionResponse{"Working asynchronously"})
+		jobID := run7zJob(downloadsDirectory, "-y", "x", "*.zip.001")
+		msg := fmt.Sprintf("Working asynchronously - Job ID: %d", jobID)
+		c.JSON(http.StatusOK, ActionResponse{msg})
 	})
 
 	router.POST("/api/action/7zzip", func(c *gin.Context) {
-		go func() {
-			output, err := run7z(downloadsDirectory, "-y", "x", "*.zip")
-			if err != nil {
-				log.Println("ERROR: " + output + " - " + err.Error())
-				return
-			}
-			log.Println("FINISHED: " + output)
-		}()
-		c.JSON(http.StatusOK, ActionResponse{"Working asynchronously"})
+		jobID := run7zJob(downloadsDirectory, "-y", "x", "*.zip")
+		msg := fmt.Sprintf("Working asynchronously - Job ID: %d", jobID)
+		c.JSON(http.StatusOK, ActionResponse{msg})
 	})
 
 	router.POST("/api/action/7z7z001", func(c *gin.Context) {
-		go func() {
-			output, err := run7z(downloadsDirectory, "-y", "x", "*.7z.001")
-			if err != nil {
-				log.Println("ERROR: " + output + " - " + err.Error())
-				return
-			}
-			log.Println("FINISHED: " + output)
-		}()
-		c.JSON(http.StatusOK, ActionResponse{"Working asynchronously"})
+		jobID := run7zJob(downloadsDirectory, "-y", "x", "*.7z.001")
+		msg := fmt.Sprintf("Working asynchronously - Job ID: %d", jobID)
+		c.JSON(http.StatusOK, ActionResponse{msg})
 	})
 
 	router.POST("/api/action/rmzip", func(c *gin.Context) {
@@ -174,7 +179,6 @@ func main() {
 	})
 
 	/*
-
 		router.POST("/api/info/treemedia", func(c *gin.Context) {
 			movies, err := listTree(downloadsDirectory)
 			if err != nil {
@@ -233,6 +237,17 @@ func main() {
 		c.JSON(http.StatusOK, fileTree)
 	})
 
+	router.POST("/api/info/listjobs", func(c *gin.Context) {
+		jobsList := make([]string, 0)
+		jobs.Range(func(k, v any) bool {
+			job := v.(*Job)
+			jobDesc := fmt.Sprintf("%d - %s - %s", k.(uint64), job.date.UTC().Format(time.RFC3339), job.output)
+			jobsList = append(jobsList, jobDesc)
+			return true
+		})
+		c.JSON(http.StatusOK, jobsList)
+	})
+
 	err = router.Run("0.0.0.0:8080")
 	if err != nil {
 		log.Fatal(err)
@@ -247,6 +262,29 @@ func getPerms(f os.DirEntry) (int64, os.FileMode, error) {
 	return info.Size(), info.Mode().Perm(), nil
 }
 
+func run7zJob(directory string, args ...string) uint64 {
+	jobID := jobsCounter.Add(1)
+
+	jobs.Store(jobID, &Job{
+		output: "",
+		date:   time.Now(),
+	})
+
+	go func() {
+		j, _ := jobs.Load(jobID)
+		job := j.(*Job)
+		output, err := run7z(directory, args...)
+		msg := "FINISHED: " + output
+		if err != nil {
+			msg = "ERROR: " + output + " - " + err.Error()
+		}
+		log.Println(msg)
+		job.output = msg
+	}()
+
+	return jobID
+}
+
 func run7z(directory string, args ...string) (string, error) {
 	cmd := exec.Command("/bin/7z", args...)
 	cmd.Dir = directory
@@ -257,12 +295,6 @@ func run7z(directory string, args ...string) (string, error) {
 	output, err := cmd.Output()
 	if err != nil {
 		slurp, _ := io.ReadAll(stderr)
-
-		errMsg := cmd.String() + ": " + string(slurp) + " - " + err.Error()
-		err2 := os.WriteFile(directory+"/"+time.Now().UTC().Format(time.RFC3339)+".txt", []byte(errMsg), 0644)
-		if err2 != nil {
-			return cmd.String() + ": " + string(slurp), err2
-		}
 		return cmd.String() + ": " + string(slurp), err
 	}
 	return cmd.String() + "\n" + string(output), err

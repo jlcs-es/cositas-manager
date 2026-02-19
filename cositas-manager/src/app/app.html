@@ -79,6 +79,21 @@
       <file-tree />
     </div>
 
+    <div is-="separator"></div>
+
+
+
+    <div box-="square" shear-="top">
+      <div class="header">
+        <span is-="badge" variant-="teal"> Jobs</span>
+      </div>
+      <ul marker-="tree">
+        @for (job of jobsList(); track job) {
+          <li>{{job}}</li>
+        }
+      </ul>
+    </div>
+
 
     <dialog id="actionOutputDialog" [open]="showActionOutputDialog()" size-="full" container-="fill">
       <div box-="round" style="overflow-x:auto;overflow-y:auto">

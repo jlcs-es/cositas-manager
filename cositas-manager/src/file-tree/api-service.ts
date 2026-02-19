@@ -32,6 +32,11 @@ export class ApiService {
       .pipe(catchError(this.handleError));
   }
 
+  getJobs(): Observable<string[]> {
+    return this.http.post<string[]>(`/api/info/listjobs`, null)
+      .pipe(catchError(this.handleError));
+  }
+
   chmod(): Observable<ActionResponse> {
     return this.http.post<ActionResponse>(`/api/action/chmod`, null)
       .pipe(catchError(this.handleError));
