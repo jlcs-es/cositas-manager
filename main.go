@@ -164,6 +164,12 @@ func main() {
 			return
 		}
 
+		err = os.MkdirAll(body.DestinationDirectory, 0775)
+        if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
 		err := os.Rename(
 			path.Join(downloadsDirectory, body.SourceName),
 			path.Join(body.DestinationDirectory, body.SourceName),
